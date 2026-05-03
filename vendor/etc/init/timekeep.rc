@@ -1,25 +1,19 @@
 on boot
-    # Cấp quyền cho system đọc RTC
+    # Set system as owner of RTC node
     chown system system /sys/class/rtc/rtc0/since_epoch
-    chmod 0440 /sys/class/rtc/rtc0/since_epoch
 
 on post-fs-data
-    # Chỉ tạo folder trong vendor data (đúng chuẩn Treble)
+    # Create folder for timekeep
+    mkdir /data/time 0770 system system
     mkdir /data/vendor/time 0770 system system
+    chmod 0770 /data/time/ats_2
+    chmod 0770 /data/vendor/time/ats_2
 
-# Service khôi phục giờ khi Boot
-service vendor.timekeep /vendor/bin/timekeep restore
-    class core                  # Chạy sớm hơn
-    user root                   # Chạy quyền root để tránh lỗi 255
+# Time service
+service timekeep /vendor/bin/timekeep restore
+    class late_start
+    user system
     group system
     capabilities SYS_TIME
     oneshot
     writepid /dev/cpuset/system-background/tasks
-
-# Service lưu giờ (có thể gọi từ script hoặc app)
-service vendor.timekeep_save /vendor/bin/timekeep store
-    class last_start
-    user root
-    group system
-    oneshot
-    disabled                   # Chỉ chạy khi được gọi
